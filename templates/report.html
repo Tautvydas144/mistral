@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEO Report - {{ url }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a href="{{ url_for('index') }}" class="brand">SEO Analyzer</a>
+    <form action="{{ url_for('analyze') }}" method="post" class="topbar-form">
+      <input type="text" name="url" value="{{ url }}" required>
+      <input type="text" name="keyword" value="{{ keyword }}" placeholder="Target keyword">
+      <button type="submit">Re-run</button>
+    </form>
+  </header>
+
+  <main class="container">
+    <section class="summary">
+      <div class="score-card">
+        <div class="score {{ 'good' if report.score >= 80 else ('ok' if report.score >= 50 else 'bad') }}">
+          {{ report.score }}
+        </div>
+        <p>SEO score</p>
+      </div>
+      <div class="meta-card">
+        <h2><a href="{{ url }}" target="_blank" rel="noopener">{{ url }}</a></h2>
+        <ul>
+          <li><strong>Title:</strong> {{ page.title or '— missing —' }}</li>
+          <li><strong>Meta description:</strong> {{ page.meta_description or '— missing —' }}</li>
+          <li><strong>Words:</strong> {{ report.audit.facts.word_count }} &middot;
+              <strong>Load:</strong> {{ page.load_time }}s &middot;
+              <strong>HTML:</strong> {{ page.html_size_kb }} KB &middot;
+              <strong>HTTPS:</strong> {{ 'yes' if page.https else 'no' }}</li>
+          {% if keyword %}
+          <li><strong>Target keyword:</strong> {{ keyword }}</li>
+          {% endif %}
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Recommendations</h2>
+      {% if report.recommendations %}
+        <ul class="recs">
+          {% for rec in report.recommendations %}
+          <li class="rec {{ rec.severity }}">
+            <span class="badge {{ rec.severity }}">{{ rec.severity }}</span>
+            <div>
+              <strong>{{ rec.title }}</strong>
+              <p>{{ rec.detail }}</p>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="all-good">No issues found. This page looks well optimized.</p>
+      {% endif %}
+    </section>
+
+    <div class="two-col">
+      <section class="panel">
+        <h2>Main keywords</h2>
+        <table>
+          <thead>
+            <tr><th>Keyword</th><th>Uses</th><th>Density</th><th>Weight</th></tr>
+          </thead>
+          <tbody>
+            {% for kw in report.keywords %}
+            <tr>
+              <td>{{ kw.keyword }}</td>
+              <td>{{ kw.count }}</td>
+              <td>{{ kw.density }}%</td>
+              <td>{{ kw.score }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>On-page checks</h2>
+        <ul class="checks">
+          {% for check in report.audit.checks %}
+          <li class="{{ check.status }}">
+            <span class="dot {{ check.status }}"></span>
+            <strong>{{ check.name }}</strong>
+            <span class="detail">{{ check.detail }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+    </div>
+
+    {% if keyword %}
+    <section class="panel">
+      <h2>Competition for &ldquo;{{ keyword }}&rdquo;</h2>
+      {% if report.competition and report.competition.error %}
+        <p class="error">{{ report.competition.error }}</p>
+      {% elif report.competition and report.competition.competitors %}
+        {% if report.competition.summary %}
+        <div class="comp-summary">
+          <div><span class="big">{{ report.competition.summary.avg_word_count }}</span><p>avg competitor words</p></div>
+          <div><span class="big">{{ report.competition.summary.pct_keyword_in_title }}%</span><p>use keyword in title</p></div>
+          <div><span class="big">{{ report.competition.summary.pct_keyword_in_h1 }}%</span><p>use keyword in H1</p></div>
+          <div><span class="big">{{ report.competition.summary.avg_density }}%</span><p>avg keyword density</p></div>
+        </div>
+        {% endif %}
+        <table>
+          <thead>
+            <tr><th>Competitor</th><th>Words</th><th>KW in title</th><th>KW in H1</th><th>Density</th><th>Top keywords</th></tr>
+          </thead>
+          <tbody>
+            {% for c in report.competition.competitors %}
+            <tr>
+              <td><a href="{{ c.url }}" target="_blank" rel="noopener">{{ c.host }}</a></td>
+              <td>{{ c.word_count }}</td>
+              <td>{{ 'yes' if c.keyword_in_title else 'no' }}</td>
+              <td>{{ 'yes' if c.keyword_in_h1 else 'no' }}</td>
+              <td>{{ c.keyword_density }}%</td>
+              <td class="kw-list">{{ c.top_keywords | join(', ') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="muted">No competitor pages could be fetched for this keyword.</p>
+      {% endif %}
+    </section>
+    {% endif %}
+  </main>
+</body>
+</html>

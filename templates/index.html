@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEO Analyzer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="hero">
+    <h1>SEO Analyzer</h1>
+    <p class="subtitle">Audit any page, extract its main keywords, compare against competitors, and get concrete fixes.</p>
+    <form action="{{ url_for('analyze') }}" method="post" class="analyze-form">
+      <input type="text" name="url" placeholder="https://example.com/page" required>
+      <input type="text" name="keyword" placeholder="Target keyword (optional, e.g. best running shoes)">
+      <button type="submit">Analyze page</button>
+    </form>
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+  </main>
+</body>
+</html>
